@@ -3,6 +3,7 @@ from sage.rings.polynomial.complex_roots import complex_roots
 class snake():
     def __init__(self, word_string):
         word = [char for char in word_string]
+        self.dimension = 2 * len(word) + 4
         self.poset = self.buildSnake(word)
         self.poset_polytope = self.poset.order_polytope()
         self.ehrhart = self.poset_polytope.ehrhart_polynomial()
@@ -15,7 +16,7 @@ class snake():
         self.flag_h_polynomial = self.poset.flag_h_polynomial()
         self.chain_polytope = self.poset.chain_polytope()
         self.p_hat = self.poset.with_bounds()
-
+        self.chain_polynomial = self.poset.chain_polynomial()
     def HasseGeneration(self, word, length):
         if length == 0:
             return [(1, 0), (2, 0), (3, 1), (3, 2)]
@@ -54,17 +55,41 @@ class snake():
     def showInfo(self):
         self.poset.hasse_diagram().show()
         self.comparability_graph.show()
-        self.incomparability_graph.show()
         self.p_hat.hasse_diagram().show()
-        print("The Ehrhart polynomial is {}: ".format(self.ehrhart))
-        print("The Order polynomial is {}: ".format(self.order_polynomial))
-        print("The flag-f polynomial is {}: ".format(self.flag_f_polynomial))
-        print("The flag-h polynomial is {}: ".format(self.flag_h_polynomial))
-        self.poset_polytope
+        print("")
+        pretty_print("The Ehrhart polynomial is {}: ".format(self.ehrhart))
+        print("")
+        pretty_print("The Order polynomial is {}: ".format(self.order_polynomial))
+        print("")
+        pretty_print("The flag-f polynomial is {}: ".format(self.flag_f_polynomial))
+        print("")
+        pretty_print("The flag-h polynomial is {}: ".format(self.flag_h_polynomial))
+        print("")
+        pretty_print("The chain polynomial is {}: ".format(self.chain_polynomial))
+        print("O(P):")
+        print("")
+        print(self.poset_polytope)
+        print("")
+        print("The volume of O(P): {}".format(self.poset_polytope.volume()))
+        print("")
+        print("These are vertices of O(P):")
+        pretty_print(self.poset_polytope.vertices())
+        print("")
+        print("C(P):")
+        print("")
+        print(self.chain_polytope)
+        print("")
+        print("The volume of C(P): {}".format(self.chain_polytope.volume()))
+        print("")
+        print("")
+        print("These are vertices of C(P):")
+        pretty_print(self.chain_polytope.vertices())
+        print("")
         print("All {} linear extensions:".format(self.linear_extensions.cardinality()))
         for element in self.linear_extensions.list():
+            print("")
             print(element)
-s = snake("R")
+s = snake("RL")
 s.showInfo()
 
 class snake_meet_irreducible():
@@ -95,6 +120,8 @@ def ehrhart_of_snake_order(n):
         print("{}:".format(entry[0]))
         pretty_print(entry[1])
         print("")
+        pretty_print(entry[1].factor())
+        print("")
 def roots_of_ehrhart_of_snake_order(n):
     words = non_isomorphic_snake_words(n)
     snakes_ehr = [(word, snake(word).ehrhart) for word in words]
@@ -112,7 +139,12 @@ def order_poly_of_order(n):
         print("{}:".format(entry[0]))
         pretty_print(entry[1])
         print("")
-
-
-ehrhart_of_snake_order(3)
-roots_of_ehrhart_of_snake_order(3)
+        
+        
+def volume_of_order(n):
+    words = non_isomorphic_snake_words(n)
+    snakes = [(word, snake(word).poset_polytope.volume()) for word in words]
+    print("These are volumes for n = {}:".format(n))
+    pretty_print(snakes)
+        
+volume_of_order(4)
