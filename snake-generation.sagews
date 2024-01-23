@@ -6,6 +6,7 @@ class snake():
         self.dimension = 2 * len(word) + 4
         self.poset = self.buildSnake(word)
         self.poset_polytope = self.poset.order_polytope()
+        self.chain_polytope = self.poset.chain_polytope()
         self.ehrhart = self.poset_polytope.ehrhart_polynomial()
         self.comparability_graph = self.poset.comparability_graph()
         self.linear_extensions = self.poset.linear_extensions()
@@ -17,6 +18,7 @@ class snake():
         self.chain_polytope = self.poset.chain_polytope()
         self.p_hat = self.poset.with_bounds()
         self.chain_polynomial = self.poset.chain_polynomial()
+        self.JP = self.poset.order_ideals_lattice()
     def HasseGeneration(self, word, length):
         if length == 0:
             return [(1, 0), (2, 0), (3, 1), (3, 2)]
@@ -54,10 +56,12 @@ class snake():
         return P
     def showInfo(self):
         self.poset.hasse_diagram().show()
-        self.comparability_graph.show()
-        self.p_hat.hasse_diagram().show()
+        self.JP.hasse_diagram().show()
         print("")
         pretty_print("The Ehrhart polynomial is {}: ".format(self.ehrhart))
+        print("")
+        print("")
+        pretty_print("The Chain polynomial, which counts the face number of the canonical triangulation, is {}: ".format(self.JP.chain_polynomial()))
         print("")
         pretty_print("The Order polynomial is {}: ".format(self.order_polynomial))
         print("")
@@ -89,8 +93,6 @@ class snake():
         for element in self.linear_extensions.list():
             print("")
             print(element)
-s = snake("RL")
-s.showInfo()
 
 class snake_meet_irreducible():
     def __init__(self, word):
@@ -112,8 +114,31 @@ def non_isomorphic_snake_words(n):
     else:
         return generate_snake_words(n)[0: 2**(n-1)]
 
+def generate_regular_snake(n):
+    s = ""
+    if n == 0:
+        S = [s]
+        return S
+    for i in range(n):
+        if i % 2 == 0:
+            s += 'R'
+        else:
+            s += 'L'
+    S = [s]
+    return S
 def ehrhart_of_snake_order(n):
     words = non_isomorphic_snake_words(n)
+    snakes_ehr = [(word, snake(word).ehrhart) for word in words]
+    print("These are Ehrhart polynomials for n = {}:".format(n))
+    for entry in snakes_ehr:
+        print("{}:".format(entry[0]))
+        pretty_print(entry[1])
+        print(entry[1])
+        print("")
+        pretty_print(entry[1].factor())
+        print("")
+def ehrhart_of_regular_snake_order(n):
+    words = generate_regular_snake(n)
     snakes_ehr = [(word, snake(word).ehrhart) for word in words]
     print("These are Ehrhart polynomials for n = {}:".format(n))
     for entry in snakes_ehr:
@@ -138,13 +163,84 @@ def order_poly_of_order(n):
     for entry in snakes_rank_polynomials:
         print("{}:".format(entry[0]))
         pretty_print(entry[1])
+        print(entry[1])
         print("")
-        
-        
-def volume_of_order(n):
+def face_number_of_order(n):
     words = non_isomorphic_snake_words(n)
-    snakes = [(word, snake(word).poset_polytope.volume()) for word in words]
-    print("These are volumes for n = {}:".format(n))
-    pretty_print(snakes)
+    snakes = [(word, snake(word).JP.chain_polynomial()) for word in words]
+    return snakes
+def face_number_of_regular_snake_of_order(n):
+    words = generate_regular_snake(n)
+    snakes = [(word, snake(word).JP.chain_polynomial()) for word in words]
+    return snakes
+## the following method returns the face numbers of the canonical triangulation of all snake with order n, which further can give the Ehrhart series.
+def print_face_number_of_order(n):
+    words = non_isomorphic_snake_words(n)
+    snakes = [(word, snake(word).JP.chain_polynomial()) for word in words]
+    print("These are face numbers of the canonical triangulation for n = {} in ascending order:".format(n))
+    for entry in snakes:
+        print("{}:".format(entry[0]))
+        coefs = entry[1].coefficients()
+        pretty_print(coefs)
+        print("")
+        print("and the factorization of the chain polynomial of J(P):")
+        pretty_print(entry[1].factor())
+        print("")
+        print("and the roots of it:")
+        pretty_print(complex_roots(entry[1]))
+        print("")
+
+## prints all J(P) of a certain order
+def JP_of_order(n):
+    words = non_isomorphic_snake_words(n)
+    snakes = [(word, snake(word).JP) for word in words]
+    print("These are J(P) for n = {}:".format(n))
+    for entry in snakes:
+        print("{}:".format(entry[0]))
+        entry[1].hasse_diagram().show()
+def h_star_of_regular_snake_of_order(n):
+    snakes = face_number_of_regular_snake_of_order(n)
+    R.<x> = PolynomialRing(RR)
+    results = []
+    for pair in snakes:
+        coefs = pair[1].coefficients()
+        f = 0
+        for i in range(2*n + 6):
+            f += coefs[i]*x^i*(1-x)^(2*n + 5 - i)
+        results.append((pair[0], f))
+    return results
+
+def print_h_star_of_regular_snake_of_order(n):
+    tada = h_star_of_regular_snake_of_order(n)
+    for pair in tada:
+        print("h star of {}:".format(pair[0]))
+        print(pair[1])
         
-volume_of_order(4)
+def h_star_of_snake_of_order(n):
+    snakes = face_number_of_order(n)
+    R.<x> = PolynomialRing(RR)
+    results = []
+    for pair in snakes:
+        coefs = pair[1].coefficients()
+        f = 0
+        for i in range(2*n + 6):
+            f += coefs[i]*x^i*(1-x)^(2*n + 5 - i)
+        results.append((pair[0], f))
+    return results
+
+def print_h_star_of_snake_of_order(n):
+    tada = h_star_of_snake_of_order(n)
+    for pair in tada:
+        print("h star of {}:".format(pair[0]))
+        print(pair[1])
+
+def roots_of_h_star_of_snake_order(n):
+    tada = h_star_of_snake_of_order(n)
+    print("These are the roots of h* polynomials for n = {}:".format(n))
+    for entry in tada:
+        print("{}:".format(entry[0]))
+        print(entry[1])
+        pretty_print(entry[1].factor())
+        print("")
+
+ehrhart_of_snake_order(3)
